@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; color: #333; } 
+        .header { text-align: center; margin-bottom: 30px; } 
+        .table { width: 100%; border-collapse: collapse; margin-top: 20px; } 
+        .table th, .table td { border: 1px solid #000; padding: 10px; text-align: left; }
+        .signatures { width: 100%; margin-top: 40px; border-collapse: collapse; }
+        .signatures td { border: none; padding: 0; font-size: 16px; }
+        .ecp-stamp { margin-top: 40px; border: 2px dashed #1a4a38; padding: 15px; width: 450px; background-color: #f4f7f6; color: #1a4a38; border-radius: 4px; font-size: 13px; line-height: 1.4; }
+        .ecp-title { font-weight: bold; font-size: 14px; text-transform: uppercase; margin-bottom: 5px; color: #245c47; border-bottom: 1px solid #245c47; padding-bottom: 3px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>АКТ ПРИЙМАННЯ-ПЕРЕДАЧІ ПРОДУКЦІЇ № {{ doc_number }}</h2>
+        <p>до Договору № {{ data.contract_number }} від {{ data.date_signed }}</p>
+    </div>
+    
+    <p>Ми, що нижче підписалися, склали цей акт про те, що Відправник (<strong>{{ data.sender }}</strong>) передав, а Одержувач (<strong>{{ data.receiver or '___________________' }}</strong>) прийняв наступну продукцію:</p>
+    
+    <table class="table">
+        <tr><th>Найменування</th><th>Кількість</th><th>Ціна</th><th>Вага (т)</th></tr>
+        {% for item in cargo_items %}
+        <tr><td>{{ item.name }}</td><td>{{ item.quantity }} {{ item.unit }}</td><td>{{ item.price }}</td><td>{{ item.weight }}</td></tr>
+        {% endfor %}
+        <tr><th colspan="3" style="text-align: right;">Загальна вага:</th><th>{{ total_weight }} т</th></tr>
+    </table>
+    
+    <table class="signatures">
+        <tr>
+            <td style="text-align: left; width: 50%;"><strong>Здав:</strong> {{ data.handed_over or '_______________________' }}</td>
+            <td style="text-align: right; width: 50%;"><strong>Прийняв:</strong> {{ data.received_by or '_______________________' }}</td>
+        </tr>
+    </table>
+
+    {% if signer %}
+    <div class="ecp-stamp">
+        <div class="ecp-title">🛡️ ДОКУМЕНТ ПІДПИСАНО ЕЦП ТОВ «ЗЕРНАРІ»</div>
+        <strong>Власник сертифіката:</strong> {{ signer.name }} <br/>
+        <strong>Посада:</strong> {{ signer.position }} <br/>
+        <strong>Тип підпису:</strong> {{ signer.type }} <br/>
+        <strong>Серійний номер КЕП:</strong> {{ signer.id }} <br/>
+        <strong>Дата та час підписання:</strong> {{ signer.date }}
+    </div>
+    {% endif %}
+</body>
+</html>

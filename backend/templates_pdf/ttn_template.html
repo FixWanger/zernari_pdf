@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <title>ТТН №{{ doc_number }}</title>
+    <style>
+        body { font-family: "Times New Roman", Times, serif; font-size: 14px; margin: 20px; }
+        .header-right { text-align: right; font-size: 12px; margin-bottom: 20px; }
+        .title { text-align: center; font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+        .subtitle { text-align: center; font-size: 14px; margin-bottom: 30px; }
+
+        /* Надійні таблиці для шапки замість flexbox */
+        table.layout-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        table.layout-table td { border: none; padding: 5px 0; vertical-align: bottom; }
+        
+        .info-label { font-weight: bold; white-space: nowrap; padding-right: 10px; }
+        .info-value { border-bottom: 1px solid black; text-align: center; width: 100%; }
+
+        h3 { text-align: center; margin-top: 30px; margin-bottom: 10px; }
+        
+        table.data-table { width: 100%; border-collapse: collapse; margin-bottom: 40px; }
+        table.data-table th, table.data-table td { border: 1px solid black; padding: 8px; text-align: center; }
+        table.data-table th { font-weight: bold; }
+
+        /* Стиль штампа підпису */
+        .ecp-stamp { margin-top: 40px; border: 2px dashed #1a4a38; padding: 15px; width: 450px; background-color: #f4f7f6; color: #1a4a38; border-radius: 4px; font-size: 13px; line-height: 1.4; page-break-inside: avoid; }
+        .ecp-title { font-weight: bold; font-size: 14px; text-transform: uppercase; margin-bottom: 5px; color: #245c47; border-bottom: 1px solid #245c47; padding-bottom: 3px; }
+    </style>
+</head>
+<body>
+    <div class="header-right">
+        Форма № 1-ТН<br>
+        Додаток 7 до Правил перевезень вантажів
+    </div>
+
+    <div class="title">ТОВАРНО-ТРАНСПОРТНА НАКЛАДНА</div>
+    <div class="subtitle">№ <u> {{ doc_number }} </u> від «{{ date }}»</div>
+
+    <table class="layout-table">
+        <tr>
+            <td class="info-label" style="width: 1%;">Автомобільний перевізник:</td>
+            <td style="width: 99%;"><div class="info-value">{{ data.carrier or '' }}</div></td>
+        </tr>
+    </table>
+    
+    <table class="layout-table">
+        <tr>
+            <td class="info-label" style="width: 1%;">Вантажовідправник:</td>
+            <td style="width: 99%;"><div class="info-value">{{ data.sender or '' }}</div></td>
+        </tr>
+    </table>
+
+    <table class="layout-table">
+        <tr>
+            <td class="info-label" style="width: 1%;">Вантажоодержувач:</td>
+            <td style="width: 99%;"><div class="info-value">{{ data.receiver or '' }}</div></td>
+        </tr>
+    </table>
+    
+    <table class="layout-table">
+        <tr>
+            <td class="info-label" style="width: 1%;">Пункт навантаження:</td>
+            <td style="width: 48%;"><div class="info-value">{{ data.load_point or '' }}</div></td>
+            <td class="info-label" style="width: 1%; padding-left: 15px;">Пункт розвантаження:</td>
+            <td style="width: 48%;"><div class="info-value">{{ data.unload_point or '' }}</div></td>
+        </tr>
+    </table>
+
+    <h3>ВІДОМОСТІ ПРО ВАНТАЖ</h3>
+
+    <table class="data-table">
+        <tr>
+            <th>№ з/п</th>
+            <th>Найменування вантажу</th>
+            <th>Одиниця виміру</th>
+            <th>Кількість місць</th>
+            <th>Ціна без ПДВ, грн</th>
+            <th>Маса брутто, т</th>
+        </tr>
+        
+        {% for item in cargo_items %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.unit }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ item.weight }}</td>
+        </tr>
+        {% endfor %}
+        
+        <tr style="font-weight: bold; background-color: #f2f2f2;">
+            <td colspan="3" style="text-align: right; padding-right: 15px;">Разом:</td>
+            <td>{{ total_quantity }}</td>
+            <td>{{ total_price }}</td>
+            <td>{{ total_weight }}</td>
+        </tr>
+    </table>
+
+    <table style="width: 100%; margin-top: 50px; border-collapse: collapse; border: none;">
+        <tr>
+            <td style="width: 45%; text-align: center; border: none; vertical-align: bottom;">
+                <div style="border-bottom: 1px solid black; height: 20px; margin-bottom: 5px;"></div>
+                <div style="font-size: 12px;">Здав (відповідальна особа вантажовідправника)</div>
+            </td>
+            <td style="width: 10%; border: none;"></td> 
+            <td style="width: 45%; text-align: center; border: none; vertical-align: bottom;">
+                <div style="border-bottom: 1px solid black; height: 20px; margin-bottom: 5px;"></div>
+                <div style="font-size: 12px;">Прийняв (відповідальна особа вантажоодержувача)</div>
+            </td>
+        </tr>
+    </table>
+
+    {% if signer %}
+    <div class="ecp-stamp">
+        <div class="ecp-title">🛡️ ДОКУМЕНТ ПІДПИСАНО ЕЦП ТОВ «ЗЕРНАРІ»</div>
+        <strong>Власник сертифіката:</strong> {{ signer.name }} <br/>
+        <strong>Посада:</strong> {{ signer.position }} <br/>
+        <strong>Тип підпису:</strong> {{ signer.type }} <br/>
+        <strong>Серійний номер КЕП:</strong> {{ signer.id }} <br/>
+        <strong>Дата та час підписання:</strong> {{ signer.date }}
+    </div>
+    {% endif %}
+</body>
+</html>

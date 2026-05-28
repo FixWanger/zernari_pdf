@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; color: #333; } 
+        .header { text-align: center; margin-bottom: 30px; } 
+        .table { width: 100%; border-collapse: collapse; margin-top: 20px; } 
+        .table th, .table td { border: 1px solid #000; padding: 10px; text-align: left; }
+        /* Стиль штампа підпису */
+        .ecp-stamp { margin-top: 50px; border: 2px dashed #1a4a38; padding: 15px; width: 450px; background-color: #f4f7f6; color: #1a4a38; border-radius: 4px; font-size: 13px; line-height: 1.4; }
+        .ecp-title { font-weight: bold; font-size: 14px; text-transform: uppercase; margin-bottom: 5px; color: #245c47; border-bottom: 1px solid #245c47; padding-bottom: 3px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h2>ЗВІТ ВИРОБНИЧО-ТЕХНІЧНОЇ ЛАБОРАТОРІЇ № {{ doc_number }}</h2>
+        <p>Дата аналізу: {{ date }}</p>
+    </div>
+    <h3>Результати аналізу: {{ data.title }}</h3>
+    <table class="table">
+        <tr><th>Культура</th><td>{{ data.crop_name }}</td></tr>
+        <tr><th>Вологість (%)</th><td>{{ data.moisture }}</td></tr>
+        <tr><th>Клейковина (%)</th><td>{{ data.gluten }}</td></tr>
+        <tr><th>Домішки (%)</th><td>{{ data.impurities }}</td></tr>
+    </table>
+    
+    <div style="margin-top: 30px;">
+        <p><strong>Відповідальний лаборант:</strong> {{ data.lab_technician }}</p>
+    </div>
+
+    {% if signer %}
+    <div class="ecp-stamp">
+        <div class="ecp-title">🛡️ ДОКУМЕНТ ПІДПИСАНО ЕЦП ТОВ «ЗЕРНАРІ»</div>
+        <strong>Власник сертифіката:</strong> {{ signer.name }} <br/>
+        <strong>Посада:</strong> {{ signer.position }} <br/>
+        <strong>Тип підпису:</strong> {{ signer.type }} <br/>
+        <strong>Серійний номер КЕП:</strong> {{ signer.id }} <br/>
+        <strong>Дата та час підписання:</strong> {{ signer.date }}
+    </div>
+    {% endif %}
+</body>
+</html>
