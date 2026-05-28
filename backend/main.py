@@ -444,9 +444,14 @@ def generate_pdf(doc_id: str, action: str = "view", db: Session = Depends(get_db
                 "id": str(sig.id)[:18].upper()
             }
 
-    path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-    config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+    import platform
     
+    if platform.system() == "Windows":
+        path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+        config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+    else:
+        # Для хмарного Linux-сервера
+        config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
     template_file = f"{doc.doc_type}_template.html"
     template = jinja2.Environment(loader=jinja2.FileSystemLoader("./templates_pdf")).get_template(template_file)
 
