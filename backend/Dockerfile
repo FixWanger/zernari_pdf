@@ -1,7 +1,7 @@
-# Використовуємо офіційний образ Python
-FROM python:3.10-slim
+# Використовуємо стабільну версію Linux (Bullseye), де точно є wkhtmltopdf
+FROM python:3.10-slim-bullseye
 
-# Встановлюємо wkhtmltopdf для генерації PDF
+# Оновлюємо систему та встановлюємо wkhtmltopdf
 RUN apt-get update && apt-get install -y wkhtmltopdf
 
 # Встановлюємо робочу директорію
