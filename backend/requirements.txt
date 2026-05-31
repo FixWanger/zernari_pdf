@@ -7,5 +7,5 @@ pdfkit
 jinja2
 PyJWT
 passlib
-bcrypt
+bcrypt==3.2.0
 python-multipart
