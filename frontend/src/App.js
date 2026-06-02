@@ -450,7 +450,7 @@ function DynamicDocumentForm({ token, userProfile }) {
                     onChange={handleInputChange}
                     required={field.name === 'title'}
                     autoComplete="off"
-                    {...(field.type === 'number' ? { step: '0.1' } : {})} // Збільшений крок для лабораторних полів
+                    {...(field.type === 'number' ? { step: '0.1' } : {})} 
                   />
                 </div>
               );
@@ -460,20 +460,28 @@ function DynamicDocumentForm({ token, userProfile }) {
           {template.structure.has_cargo_table && (
             <div style={{ marginTop: '20px', borderTop: '2px dashed #ccc', paddingTop: '15px' }}>
               <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>Специфікація вантажу/продукції:</h3>
+              
+              {/* --- ШАПКА ТАБЛИЦІ --- */}
+              <div style={{ display: 'flex', gap: '5px', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#555' }}>
+                <div style={{ flex: 3, paddingLeft: '5px' }}>Назва товару</div>
+                <div style={{ flex: 1, paddingLeft: '5px' }}>Кількість</div>
+                <div style={{ flex: 1, paddingLeft: '5px' }}>Ціна (грн)</div>
+                <div style={{ flex: 1, paddingLeft: '5px' }}>Вага (т)</div>
+              </div>
+
               {cargoItems.map((item, index) => (
                 <div key={index} style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
                   <input 
                     className="form-input" 
                     type="text" 
                     list="cargo-list"
-                    placeholder="Оберіть або введіть вантаж..." 
+                    placeholder="Оберіть або введіть вантаж..."
                     value={item.name} 
                     onChange={(e) => handleItemChange(index, 'name', e.target.value)} 
                     required 
                     autoComplete="off"
                     style={{ flex: 3 }}
                   />
-                  {/* Кроки для вибору значень змінено на більш зручні */}
                   <input className="form-input" type="number" step="1" placeholder="К-сть" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} required style={{ flex: 1 }}/>
                   <input className="form-input" type="number" step="1" placeholder="Ціна" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} style={{ flex: 1 }}/>
                   <input className="form-input" type="number" step="0.1" placeholder="Вага (т)" value={item.weight} onChange={(e) => handleItemChange(index, 'weight', e.target.value)} style={{ flex: 1 }}/>
@@ -482,7 +490,7 @@ function DynamicDocumentForm({ token, userProfile }) {
               <button 
                 type="button" 
                 onClick={() => setCargoItems([...cargoItems, { name: '', unit: 'кг', quantity: '', price: '', weight: '' }])} 
-                style={{ padding: '8px 15px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                style={{ padding: '8px 15px', backgroundColor: '#17a2b8', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', marginTop: '5px' }}
               >
                 + Додати рядок
               </button>
