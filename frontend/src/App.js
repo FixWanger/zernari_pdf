@@ -453,30 +453,39 @@ function DynamicDocumentForm({ token, userProfile }) {
             <div style={{ marginTop: '20px', borderTop: '2px dashed #ccc', paddingTop: '15px' }}>
               <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>Специфікація вантажу/продукції:</h3>
               
-              {/* --- ВИПРАВЛЕНА ШАПКА ТАБЛИЦІ (Ідеальне вирівнювання) --- */}
+              {/* --- ІДЕАЛЬНА ШАПКА ТАБЛИЦІ --- */}
               <div style={{ display: 'flex', gap: '5px', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#555' }}>
-                <div style={{ flex: '3 1 0%', paddingLeft: '5px' }}>Назва товару</div>
-                <div style={{ flex: '1 1 0%', paddingLeft: '5px' }}>Кількість</div>
-                <div style={{ flex: '1 1 0%', paddingLeft: '5px' }}>Ціна (грн)</div>
-                <div style={{ flex: '1 1 0%', paddingLeft: '5px' }}>Вага (т)</div>
+                <div style={{ flex: 3 }}>Назва товару</div>
+                <div style={{ flex: 1 }}>Кількість</div>
+                <div style={{ flex: 1 }}>Ціна (грн)</div>
+                <div style={{ flex: 1 }}>Вага (т)</div>
               </div>
 
               {cargoItems.map((item, index) => (
                 <div key={index} style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-                  <input 
-                    className="form-input" 
-                    type="text" 
-                    list="cargo-list"
-                    placeholder="Оберіть або введіть вантаж..."
-                    value={item.name} 
-                    onChange={(e) => handleItemChange(index, 'name', e.target.value)} 
-                    required 
-                    autoComplete="off"
-                    style={{ flex: '3 1 0%' }}
-                  />
-                  <input className="form-input" type="number" step="1" placeholder="К-сть" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} required style={{ flex: '1 1 0%' }}/>
-                  <input className="form-input" type="number" step="1" placeholder="Ціна" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} style={{ flex: '1 1 0%' }}/>
-                  <input className="form-input" type="number" step="0.1" placeholder="Вага (т)" value={item.weight} onChange={(e) => handleItemChange(index, 'weight', e.target.value)} style={{ flex: '1 1 0%' }}/>
+                  {/* Обгортаємо кожен інпут у div для рівного Flexbox вирівнювання */}
+                  <div style={{ flex: 3 }}>
+                    <input 
+                      className="form-input" 
+                      type="text" 
+                      list="cargo-list"
+                      placeholder="Оберіть або введіть вантаж..."
+                      value={item.name} 
+                      onChange={(e) => handleItemChange(index, 'name', e.target.value)} 
+                      required 
+                      autoComplete="off"
+                      style={{ width: '100%', boxSizing: 'border-box' }}
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <input className="form-input" type="number" step="1" placeholder="К-сть" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} required style={{ width: '100%', boxSizing: 'border-box' }}/>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <input className="form-input" type="number" step="1" placeholder="Ціна" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }}/>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <input className="form-input" type="number" step="0.1" placeholder="Вага (т)" value={item.weight} onChange={(e) => handleItemChange(index, 'weight', e.target.value)} style={{ width: '100%', boxSizing: 'border-box' }}/>
+                  </div>
                 </div>
               ))}
               <button 
