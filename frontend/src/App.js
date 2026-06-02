@@ -274,7 +274,7 @@ function AuditLogs({ token, userProfile }) {
   );
 }
 
-// --- ДИНАМІЧНА ФОРМА (Оновлена з автозаповненням та логікою контрагентів) ---
+// --- ДИНАМІЧНА ФОРМА ---
 function DynamicDocumentForm({ token, userProfile }) {
   const location = useLocation();
   const template = location.state?.template;
@@ -288,12 +288,10 @@ function DynamicDocumentForm({ token, userProfile }) {
   const [usersList, setUsersList] = useState([]);
 
   useEffect(() => {
-    // Завантажуємо контрагентів
     axios.get(`${API_URL}/contractors/`, { headers: { Authorization: `Bearer ${token}` } })
       .then(res => setContractors(res.data))
       .catch(err => console.log(err));
 
-    // Завантажуємо всіх співробітників (щоб відфільтрувати лаборантів)
     if (userProfile?.role === 'admin') {
       axios.get(`${API_URL}/users/`, { headers: { Authorization: `Bearer ${token}` } })
         .then(res => setUsersList(res.data))
@@ -301,14 +299,12 @@ function DynamicDocumentForm({ token, userProfile }) {
     }
   }, [token, userProfile]);
 
-  // Фільтруємо лише тих, хто працює в лабораторії
   const labTechnicians = usersList.filter(user => user.department === "Виробничо-технічна лабораторія");
 
   if (!template) {
     return <div>Помилка: Шаблон не знайдено. Поверніться до каталогу.</div>;
   }
 
-  // Перевіряємо, чи містить шаблон поле "receiver" (Одержувач)
   const hasReceiverField = template.structure.fields.some(f => f.name === 'receiver');
 
   const handleInputChange = (e) => {
@@ -334,7 +330,6 @@ function DynamicDocumentForm({ token, userProfile }) {
     const newItems = [...cargoItems];
     newItems[index][field] = value;
 
-    // Магія автозаповнення вантажу
     if (field === 'name') {
       const foundCargo = PREDEFINED_CARGO.find(c => c.name === value);
       if (foundCargo) {
@@ -387,7 +382,6 @@ function DynamicDocumentForm({ token, userProfile }) {
         <span className="user-info">{userProfile?.full_name} ({userProfile?.department})</span>
       </div>
 
-      {/* Приховані списки для автозаповнення (Datalists) */}
       <datalist id="address-list">
         {PREDEFINED_ADDRESSES.map((addr, idx) => <option key={idx} value={addr} />)}
       </datalist>
@@ -403,7 +397,6 @@ function DynamicDocumentForm({ token, userProfile }) {
       <div className="form-card">
         <form onSubmit={handleSubmit}>
           
-          {/* Показуємо блок вибору контрагента ТІЛЬКИ якщо в шаблоні є поле Одержувач */}
           {hasReceiverField && (
             <div className="form-row" style={{ marginBottom: '20px', backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '4px' }}>
               <div className="form-group" style={{ width: '100%' }}>
@@ -429,7 +422,6 @@ function DynamicDocumentForm({ token, userProfile }) {
 
           <div className="form-row" style={{ flexWrap: 'wrap' }}>
             {template.structure.fields.map((field, idx) => {
-              // Визначаємо, чи потрібен цьому полю список підказок
               let listId = undefined;
               if (field.name === 'load_point' || field.name === 'unload_point') {
                 listId = "address-list";
@@ -461,12 +453,12 @@ function DynamicDocumentForm({ token, userProfile }) {
             <div style={{ marginTop: '20px', borderTop: '2px dashed #ccc', paddingTop: '15px' }}>
               <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>Специфікація вантажу/продукції:</h3>
               
-              {/* --- ШАПКА ТАБЛИЦІ --- */}
+              {/* --- ВИПРАВЛЕНА ШАПКА ТАБЛИЦІ (Ідеальне вирівнювання) --- */}
               <div style={{ display: 'flex', gap: '5px', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#555' }}>
-                <div style={{ flex: 3, paddingLeft: '5px' }}>Назва товару</div>
-                <div style={{ flex: 1, paddingLeft: '5px' }}>Кількість</div>
-                <div style={{ flex: 1, paddingLeft: '5px' }}>Ціна (грн)</div>
-                <div style={{ flex: 1, paddingLeft: '5px' }}>Вага (т)</div>
+                <div style={{ flex: '3 1 0%', paddingLeft: '5px' }}>Назва товару</div>
+                <div style={{ flex: '1 1 0%', paddingLeft: '5px' }}>Кількість</div>
+                <div style={{ flex: '1 1 0%', paddingLeft: '5px' }}>Ціна (грн)</div>
+                <div style={{ flex: '1 1 0%', paddingLeft: '5px' }}>Вага (т)</div>
               </div>
 
               {cargoItems.map((item, index) => (
@@ -480,11 +472,11 @@ function DynamicDocumentForm({ token, userProfile }) {
                     onChange={(e) => handleItemChange(index, 'name', e.target.value)} 
                     required 
                     autoComplete="off"
-                    style={{ flex: 3 }}
+                    style={{ flex: '3 1 0%' }}
                   />
-                  <input className="form-input" type="number" step="1" placeholder="К-сть" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} required style={{ flex: 1 }}/>
-                  <input className="form-input" type="number" step="1" placeholder="Ціна" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} style={{ flex: 1 }}/>
-                  <input className="form-input" type="number" step="0.1" placeholder="Вага (т)" value={item.weight} onChange={(e) => handleItemChange(index, 'weight', e.target.value)} style={{ flex: 1 }}/>
+                  <input className="form-input" type="number" step="1" placeholder="К-сть" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} required style={{ flex: '1 1 0%' }}/>
+                  <input className="form-input" type="number" step="1" placeholder="Ціна" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} style={{ flex: '1 1 0%' }}/>
+                  <input className="form-input" type="number" step="0.1" placeholder="Вага (т)" value={item.weight} onChange={(e) => handleItemChange(index, 'weight', e.target.value)} style={{ flex: '1 1 0%' }}/>
                 </div>
               ))}
               <button 
