@@ -274,7 +274,7 @@ function AuditLogs({ token, userProfile }) {
   );
 }
 
-// --- ДИНАМІЧНА ФОРМА (Оновлена з автозаповненням) ---
+// --- ДИНАМІЧНА ФОРМА (Оновлена з автозаповненням та логікою контрагентів) ---
 function DynamicDocumentForm({ token, userProfile }) {
   const location = useLocation();
   const template = location.state?.template;
@@ -293,7 +293,7 @@ function DynamicDocumentForm({ token, userProfile }) {
       .then(res => setContractors(res.data))
       .catch(err => console.log(err));
 
-    // Завантажуємо всіх співробітників (якщо поточний юзер - адмін, щоб відфільтрувати лаборантів)
+    // Завантажуємо всіх співробітників (щоб відфільтрувати лаборантів)
     if (userProfile?.role === 'admin') {
       axios.get(`${API_URL}/users/`, { headers: { Authorization: `Bearer ${token}` } })
         .then(res => setUsersList(res.data))
@@ -307,6 +307,9 @@ function DynamicDocumentForm({ token, userProfile }) {
   if (!template) {
     return <div>Помилка: Шаблон не знайдено. Поверніться до каталогу.</div>;
   }
+
+  // Перевіряємо, чи містить шаблон поле "receiver" (Одержувач)
+  const hasReceiverField = template.structure.fields.some(f => f.name === 'receiver');
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -400,26 +403,29 @@ function DynamicDocumentForm({ token, userProfile }) {
       <div className="form-card">
         <form onSubmit={handleSubmit}>
           
-          <div className="form-row" style={{ marginBottom: '20px', backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '4px' }}>
-            <div className="form-group" style={{ width: '100%' }}>
-              <label>📎 Прив'язати контрагента (опціонально):</label>
-              <select 
-                className="form-input" 
-                value={selectedContractor} 
-                onChange={handleContractorChange} 
-              >
-                <option value="">-- Не обрано --</option>
-                {contractors.map(c => (
-                  <option key={c.id} value={c.id}>
-                    {c.legal_name} (ЄДРПОУ: {c.edrpou})
-                  </option>
-                ))}
-              </select>
-              <small style={{color: '#666', marginTop: '5px', display: 'block'}}>
-                * Вибір контрагента автоматично заповнить поле "Одержувач"
-              </small>
+          {/* Показуємо блок вибору контрагента ТІЛЬКИ якщо в шаблоні є поле Одержувач */}
+          {hasReceiverField && (
+            <div className="form-row" style={{ marginBottom: '20px', backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '4px' }}>
+              <div className="form-group" style={{ width: '100%' }}>
+                <label>📎 Прив'язати контрагента (опціонально):</label>
+                <select 
+                  className="form-input" 
+                  value={selectedContractor} 
+                  onChange={handleContractorChange} 
+                >
+                  <option value="">-- Не обрано --</option>
+                  {contractors.map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.legal_name} (ЄДРПОУ: {c.edrpou})
+                    </option>
+                  ))}
+                </select>
+                <small style={{color: '#666', marginTop: '5px', display: 'block'}}>
+                  * Вибір контрагента автоматично заповнить поле "Одержувач"
+                </small>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="form-row" style={{ flexWrap: 'wrap' }}>
             {template.structure.fields.map((field, idx) => {
@@ -444,6 +450,7 @@ function DynamicDocumentForm({ token, userProfile }) {
                     onChange={handleInputChange}
                     required={field.name === 'title'}
                     autoComplete="off"
+                    {...(field.type === 'number' ? { step: '0.1' } : {})} // Збільшений крок для лабораторних полів
                   />
                 </div>
               );
@@ -466,9 +473,10 @@ function DynamicDocumentForm({ token, userProfile }) {
                     autoComplete="off"
                     style={{ flex: 3 }}
                   />
-                  <input className="form-input" type="number" placeholder="К-сть" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} required style={{ flex: 1 }}/>
-                  <input className="form-input" type="number" step="0.01" placeholder="Ціна" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} style={{ flex: 1 }}/>
-                  <input className="form-input" type="number" step="0.001" placeholder="Вага (т)" value={item.weight} onChange={(e) => handleItemChange(index, 'weight', e.target.value)} style={{ flex: 1 }}/>
+                  {/* Кроки для вибору значень змінено на більш зручні */}
+                  <input className="form-input" type="number" step="1" placeholder="К-сть" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', e.target.value)} required style={{ flex: 1 }}/>
+                  <input className="form-input" type="number" step="1" placeholder="Ціна" value={item.price} onChange={(e) => handleItemChange(index, 'price', e.target.value)} style={{ flex: 1 }}/>
+                  <input className="form-input" type="number" step="0.1" placeholder="Вага (т)" value={item.weight} onChange={(e) => handleItemChange(index, 'weight', e.target.value)} style={{ flex: 1 }}/>
                 </div>
               ))}
               <button 
