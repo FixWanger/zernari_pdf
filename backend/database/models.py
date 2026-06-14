@@ -43,6 +43,7 @@ class Contractor(Base):
     edrpou = Column(String(10), nullable=False, unique=True)
     address = Column(String(255), nullable=True)
     contacts = Column(String(150), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True) # Додано поле статусу
     documents = relationship("Document", back_populates="contractor")
 
 class Document(Base):

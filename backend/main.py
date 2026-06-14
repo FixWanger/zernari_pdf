@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy import text  # Додано для оновлення БД
 from pydantic import BaseModel
 from typing import Optional, List
 from fastapi.responses import FileResponse
@@ -98,6 +99,17 @@ def setup_admin(db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Твій обліковий запис успішно створено!"}
 
+# --- МАРШРУТ ДЛЯ ОНОВЛЕННЯ БД (БЕЗ SQL КЛІЄНТІВ) ---
+@app.get("/upgrade-db/")
+def upgrade_db(db: Session = Depends(get_db)):
+    try:
+        db.execute(text("ALTER TABLE contractors ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;"))
+        db.commit()
+        return {"message": "Базу даних успішно оновлено! Додано колонку is_active для контрагентів."}
+    except Exception as e:
+        db.rollback()
+        return {"error": str(e)}
+
 @app.post("/token")
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
@@ -106,9 +118,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     
     access_token = auth.create_access_token(data={"sub": user.email, "role": user.role})
     
-    # ФІКСУЄМО ВХІД В ЖУРНАЛ АУДИТУ
     log_audit(db, user.id, "Вхід в систему", f"Користувач {user.email} успішно авторизувався")
-    
     return {"access_token": access_token, "token_type": "bearer"}
 
 # --- МАРШРУТИ УПРАВЛІННЯ КОРИСТУВАЧАМИ (RBAC) ---
@@ -233,7 +243,7 @@ class ContractorCreate(BaseModel):
 
 @app.get("/contractors/")
 def get_contractors(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    contractors = db.query(Contractor).all()
+    contractors = db.query(Contractor).order_by(Contractor.legal_name).all()
     result = []
     for c in contractors:
         result.append({
@@ -241,7 +251,8 @@ def get_contractors(db: Session = Depends(get_db), current_user: User = Depends(
             "legal_name": c.legal_name,
             "edrpou": c.edrpou,
             "address": c.address,
-            "contacts": c.contacts
+            "contacts": c.contacts,
+            "is_active": c.is_active
         })
     return result
 
@@ -257,6 +268,20 @@ def create_contractor(c_data: ContractorCreate, db: Session = Depends(get_db), c
     db.commit()
     log_audit(db, current_user.id, "Додавання контрагента", f"Додано: {c_data.legal_name}")
     return {"message": "Контрагента успішно збережено!"}
+
+@app.patch("/contractors/{contractor_id}/toggle")
+def toggle_contractor(contractor_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    c = db.query(Contractor).filter(Contractor.id == contractor_id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Контрагента не знайдено")
+    
+    c.is_active = not c.is_active
+    db.commit()
+    
+    status_text = "відновлено" if c.is_active else "деактивовано"
+    log_audit(db, current_user.id, "Зміна статусу контрагента", f"Контрагента {c.legal_name} {status_text}")
+    
+    return {"message": f"Контрагента успішно {status_text}!"}
 
 # --- СИСТЕМА ШАБЛОНІВ ТА КАТАЛОГ ---
 @app.get("/setup-templates/")
@@ -328,16 +353,6 @@ def setup_templates(db: Session = Depends(get_db)):
     
     db.commit()
     return {"message": "Успішно оновлено шаблони у PostgreSQL!"}
-
-@app.get("/templates/")
-def get_templates(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    templates = db.query(Template).filter(Template.is_active == True).all()
-    result = []
-    for t in templates:
-        t_dict = t.__dict__.copy()
-        t_dict["id"] = str(t.id)
-        result.append(t_dict)
-    return result
 
 # --- ЗАХИЩЕНІ МАРШРУТИ ДОКУМЕНТІВ ТА ПІДПИСІВ ---
 class CargoItemCreate(BaseModel):
@@ -436,7 +451,6 @@ def generate_pdf(doc_id: str, action: str = "view", db: Session = Depends(get_db
     if not doc: 
         return {"error": "Документ не знайдено!"}
 
-    # Пошук інформації про підпис у базі даних
     sig = db.query(Signature).filter(Signature.document_id == doc.id).first()
     signer_info = None
     if sig:
@@ -456,7 +470,6 @@ def generate_pdf(doc_id: str, action: str = "view", db: Session = Depends(get_db
         path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
         config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
     else:
-        # Для хмарного Linux-сервера
         config = pdfkit.configuration(wkhtmltopdf='/usr/bin/wkhtmltopdf')
     template_file = f"{doc.doc_type}_template.html"
     template = jinja2.Environment(loader=jinja2.FileSystemLoader("./templates_pdf")).get_template(template_file)
@@ -478,9 +491,7 @@ def generate_pdf(doc_id: str, action: str = "view", db: Session = Depends(get_db
     pdf_path = f"{doc.doc_type}_{doc_id}.pdf"
     pdfkit.from_string(template.render(context), pdf_path, configuration=config, options={"enable-local-file-access": ""})
     
-    # ЛОГІКА РОЗДІЛЕННЯ: ПЕРЕГЛЯД АБО ЗАВАНТАЖЕННЯ
     if action == "download":
         return FileResponse(pdf_path, media_type='application/pdf', filename=pdf_path)
     else:
-        # inline каже браузеру відкрити файл як веб-сторінку, а не скачувати
         return FileResponse(pdf_path, media_type='application/pdf', headers={"Content-Disposition": f"inline; filename={pdf_path}"})

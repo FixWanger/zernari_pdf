@@ -177,6 +177,17 @@ function Contractors({ token, userProfile }) {
     }
   };
 
+  const handleToggleStatus = async (contractorId) => {
+    try {
+      await axios.patch(`${API_URL}/contractors/${contractorId}/toggle`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchContractors();
+    } catch (err) {
+      alert('Помилка зміни статусу контрагента');
+    }
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -215,14 +226,33 @@ function Contractors({ token, userProfile }) {
             <th>Назва контрагента</th>
             <th>ЄДРПОУ</th>
             <th>Статус</th>
+            <th>Дії</th>
           </tr>
         </thead>
         <tbody>
           {contractors.map(c => (
-            <tr key={c.id}>
+            <tr key={c.id} style={{ opacity: c.is_active !== false ? 1 : 0.6 }}>
               <td style={{ fontWeight: 'bold' }}>{c.legal_name}</td>
               <td>{c.edrpou}</td>
-              <td><span className="status-badge" style={{backgroundColor: '#c3e6cb', color: '#155724'}}>Активний</span></td>
+              <td>
+                {c.is_active !== false ? (
+                  <span className="status-badge" style={{backgroundColor: '#c3e6cb', color: '#155724'}}>Активний</span>
+                ) : (
+                  <span className="status-badge" style={{backgroundColor: '#f8d7da', color: '#721c24'}}>Неактивний</span>
+                )}
+              </td>
+              <td>
+                <button 
+                  onClick={() => handleToggleStatus(c.id)}
+                  style={{ 
+                    padding: '6px 12px', 
+                    backgroundColor: c.is_active !== false ? '#ff4d4d' : '#28a745', 
+                    color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold'
+                  }}
+                >
+                  {c.is_active !== false ? 'Деактивувати' : 'Відновити'}
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -407,7 +437,8 @@ function DynamicDocumentForm({ token, userProfile }) {
                   onChange={handleContractorChange} 
                 >
                   <option value="">-- Не обрано --</option>
-                  {contractors.map(c => (
+                  {/* ТУТ ВІДБУВАЄТЬСЯ ФІЛЬТРАЦІЯ АКТИВНИХ КОНТРАГЕНТІВ */}
+                  {contractors.filter(c => c.is_active !== false).map(c => (
                     <option key={c.id} value={c.id}>
                       {c.legal_name} (ЄДРПОУ: {c.edrpou})
                     </option>
@@ -453,7 +484,6 @@ function DynamicDocumentForm({ token, userProfile }) {
             <div style={{ marginTop: '20px', borderTop: '2px dashed #ccc', paddingTop: '15px' }}>
               <h3 style={{ marginBottom: '15px', fontSize: '16px' }}>Специфікація вантажу/продукції:</h3>
               
-              {/* --- ІДЕАЛЬНА ШАПКА ТАБЛИЦІ --- */}
               <div style={{ display: 'flex', gap: '5px', marginBottom: '5px', fontSize: '13px', fontWeight: 'bold', color: '#555' }}>
                 <div style={{ flex: 3 }}>Назва товару</div>
                 <div style={{ flex: 1 }}>Кількість</div>
@@ -463,7 +493,6 @@ function DynamicDocumentForm({ token, userProfile }) {
 
               {cargoItems.map((item, index) => (
                 <div key={index} style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
-                  {/* Обгортаємо кожен інпут у div для рівного Flexbox вирівнювання */}
                   <div style={{ flex: 3 }}>
                     <input 
                       className="form-input" 
