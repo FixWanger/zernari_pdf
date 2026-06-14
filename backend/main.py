@@ -353,7 +353,15 @@ def setup_templates(db: Session = Depends(get_db)):
     
     db.commit()
     return {"message": "Успішно оновлено шаблони у PostgreSQL!"}
-
+@app.get("/templates/")
+def get_templates(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    templates = db.query(Template).filter(Template.is_active == True).all()
+    result = []
+    for t in templates:
+        t_dict = t.__dict__.copy()
+        t_dict["id"] = str(t.id)
+        result.append(t_dict)
+    return result
 # --- ЗАХИЩЕНІ МАРШРУТИ ДОКУМЕНТІВ ТА ПІДПИСІВ ---
 class CargoItemCreate(BaseModel):
     name: str
